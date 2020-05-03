@@ -8,7 +8,7 @@ git clone https://github.com/greerviau/Autonomous-Truck.git && cd Autonomous-Tru
 ```
 Git clone https://github.com/tidzo/pyvjoy into Autonomous-Truck  
 Download and install vJoy from http://vjoystick.sourceforge.net/site/index.php/download-a-install/download  
-Navigate vJoy/x86 in wherever you installed vJoy. Copy vJoyInterface.dll and paste it into the pyvjoy directory.  
+Navigate ```vJoy/x86``` in wherever you installed vJoy. Copy vJoyInterface.dll and paste it into the pyvjoy directory.  
 
 ## Usage 
 ### Data Collection
