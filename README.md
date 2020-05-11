@@ -6,7 +6,7 @@ Git clone the repository and ```cd``` into the directory
 ``` 
 git clone https://github.com/greerviau/Autonomous-Truck.git && cd Autonomous-Truck
 ```
-Git clone https://github.com/tidzo/pyvjoy into Autonomous-Truck  
+```git clone https://github.com/tidzo/pyvjoy``` into Autonomous-Truck  
 Download and install vJoy from http://vjoystick.sourceforge.net/site/index.php/download-a-install/download  
 Navigate to ```vJoy/x86``` in wherever you installed vJoy. Copy vJoyInterface.dll and paste it into the pyvjoy directory.  
 
@@ -15,12 +15,11 @@ Navigate to ```vJoy/x86``` in wherever you installed vJoy. Copy vJoyInterface.dl
 #### Game Settings
 Make sure the game detects your gamepad<br/>
 Make sure the input is a controller and **NOT A WHEEL**<br/>
-Make sure that the controller **B** button is bound to roof camera in game<br/>  
+Make sure that the controller **B** button is bound to roof camera in game<br/> 
 Use **1280x720** resolution in game<br/>  
 
 #### Recording Data
 To collect data run ```python3 collect_data.py <session>``` Make sure to specify different sessions for every execution.<br/> 
-
 While recording, use the **B** button to start a new recording, this will not create a new session but instead split into a new clip.<br/>  
 Use this feature to start recording new clips of desired data. This will make data cleaning easier. Ex. Before changing lanes, press **B** before changing and press **B** after lane change is finished. This will create 3 clips, 1 before lane change, 1 of the lane change and the final will continue recording the rest of the drive. Then durring data cleaning simply delete the clip of the lane change.<br/>  
 Recording sessions will be saved to ```data/roof_cam/raw/<session>/<clips>```
@@ -28,9 +27,9 @@ Recording sessions will be saved to ```data/roof_cam/raw/<session>/<clips>```
 If additional cleaning is required, run ```python3 clip_video.py raw/<session>/<clip>``` While video is playing, press **q** to keyframe. Once video is done playing the program will split the video along key frames and saved to ```data/roof_cam/raw/<session>/<clips>/<splits>```<br/>   
 Then simply move the clips that you want to keep to ```data/roof_cam/raw/<session>``` and discard the rest.
 ### Preprocessing
-Once data has been cleaned, run ```python3 preprocess.py``` This will preprocess all of the clips in ```data/roof_cam/raw``` The subfolders of this directory must have the file structure of ```<session>/<clips>``` with the mp4 and csv files within.<br/>  
+Once the data has been cleaned, run ```python3 preprocess.py``` This will preprocess all of the clips in ```data/roof_cam/raw``` The subfolders of this directory must have the file structure of ```<session>/<clips>``` with the mp4 and csv files within.<br/>  
 This will save the preprocessed data to ```data/roof_cam/processed``` The data will be divided into sessions but the clips will be aggregated into X.npy and Y.csv<br/>   
-There will also be a total aggregate X.npy and Y.csv  
+There will also be a total aggregate of all sessions as X.npy and Y.csv 
 ### Training
 After preprocessing, open ```train_conv_net.py``` Make sure to specify the SAVE_PATH for the model as well as the hyperparams.<br/> 
 Run ```python3 train_conv_net.py``` to train the model.
