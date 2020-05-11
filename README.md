@@ -36,7 +36,7 @@ Run ```python3 train_conv_net.py``` to train the model.
 ### Train Digit Recognition
 To train the digit recognition for monitoring speed run ```python3 train_digit_rec.py```
 ### Train Brake Prediction model
-To train the conv net for brake prediction run ```python3 train_digit_rec.py```
+To train the conv net for brake prediction run ```python3 train_brake_net.py```
 
 ### Testing
 Open your game and in gameplay settings set your input as Keyboard + vJoy Device. If vJoy is not detected then run ```detect_vjoy_ingame.py``` while your game is open and it should ask you to use vJoy as a controller. Like the Xbox controller, make sure the input is a controller and **NOT A WHEEL**<br/>   
