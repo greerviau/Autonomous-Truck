@@ -34,9 +34,9 @@ There will also be a total aggregate of all sessions as X.npy and Y.csv
 After preprocessing, open ```train_conv_net.py``` Make sure to specify the SAVE_PATH for the model as well as the hyperparams.<br/> 
 Run ```python3 train_conv_net.py``` to train the model.
 ### Testing
-Open your game and in gameplay settings set your input as Keyboard + vJoy Device. If vJoy is not detected then run ```detect_vjoy_ingame.py``` while your game is open and it should ask you to use vJoy as a controller. Like the Xbox controller, make sure the input is a controller and **NOT A WHEEL**<br/>
-In ```test_autopilot.py``` specify the CONV_NET_MODEL directory for your saved model. Also specify if you want to record data from the test. Run ```test_autopilot.py``` if you want to record data from the test, specify the session as an argument in the command line execution. Data will be saved to ```data/roof_cam/raw_autonomous```<br/>
-Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera.<br/>
+Open your game and in gameplay settings set your input as Keyboard + vJoy Device. If vJoy is not detected then run ```detect_vjoy_ingame.py``` while your game is open and it should ask you to use vJoy as a controller. Like the Xbox controller, make sure the input is a controller and **NOT A WHEEL**<br/>   
+In ```test_autopilot.py``` specify the CONV_NET_MODEL directory for your saved model. Also specify if you want to record data from the test. Run ```test_autopilot.py``` if you want to record data from the test, specify the session as an argument in the command line execution. Data will be saved to ```data/roof_cam/raw_autonomous```<br/>   
+Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera.<br/>   
 **LB** and **RB** activate respective lane changes.<br/>
 
 ## Notes
