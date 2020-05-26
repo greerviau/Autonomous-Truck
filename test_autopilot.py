@@ -207,9 +207,6 @@ def main():
             joy.data.wAxisY = MAX_VJOY // 2
             #joy.data.wAxisY = MAX_VJOY - int(((1.0+left_y)/2) * MAX_VJOY)
 
-            # UPDATE THE VIRTUAL JOYSTICK
-            joy.update()
-
             #BRAKE PREDICTION
             '''
             brake_pred = brake_net.predict(np.array([input_frame]))[0][0]
@@ -325,6 +322,9 @@ def main():
 
             else:
                 joy.data.wAxisX = human_joy_x
+
+            # UPDATE THE VIRTUAL JOYSTICK
+            joy.update()
 
             #SETUP THE VISUAL FRAME
             shp = combined.shape
