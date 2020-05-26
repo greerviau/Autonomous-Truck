@@ -13,7 +13,7 @@ if not os.path.exists(processed_data_dir):
 data_dir = 'data/roof_cam/raw/Peterbilt'
 
 session_folders = os.listdir(data_dir)
-
+'''
 for session in session_folders:
     print()
     print(session)
@@ -72,10 +72,12 @@ for session in session_folders:
     control_data = pd.DataFrame(control_data, columns=['Brake'])
     np.save(os.path.join(session_data_dir, 'X'), total_frames)
     control_data.to_csv(os.path.join(session_data_dir, 'Y.csv'))
-
+'''
 
 aggregate_frames = []
 aggregate_data = []
+
+session_folders = os.listdir(processed_data_dir)
 
 print('Reloading...')
 for session in session_folders:
@@ -91,6 +93,9 @@ for i in range(len(aggregate_data)):
         not_brake.append([np.copy(aggregate_frames[i]), aggregate_data[i]])
     else:
         brake.append([np.copy(aggregate_frames[i]), aggregate_data[i]])
+
+aggregate_frames = None
+aggregate_data = None
 
 print('Before Ballance')
 print('Brake: ',len(brake))
