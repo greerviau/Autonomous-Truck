@@ -1,5 +1,5 @@
 # Autonomous-Truck
-An autonomous driving system built to drive in a truck driving simulator
+An autonomous driving system built to drive in a truck driving simulator. This system uses a Tensorflow implementation of [NVIDIA End-to-End Deep Learning for Self-Driving Cars](https://devblogs.nvidia.com/deep-learning-self-driving-cars/). To run this program you must have Tensorflow-GPU 1.15 (This program does not support Tensorflow 2.0), follow these guide to install on [Windows 10](https://towardsdatascience.com/installing-tensorflow-with-cuda-cudnn-and-gpu-support-on-windows-10-60693e46e781) or [Ubuntu](https://towardsdatascience.com/how-to-install-tensorflow-gpu-on-ubuntu-18-04-1c1d2d6d6fd2).
 
 ## Installation
 Git clone the repository and ```cd``` into the directory, install requirements and clone pyvjoy into Autonomous-Truck
