@@ -10,10 +10,10 @@ git clone https://github.com/tidzo/pyvjoy
 ```
 Download and install vJoy from http://vjoystick.sourceforge.net/site/index.php/download-a-install/download  
 Navigate to ```vJoy/x86``` in wherever you installed vJoy. Copy vJoyInterface.dll and paste it into the pyvjoy directory.  
+___
 
 ## Usage 
-### Data Collection
-#### Game Settings
+### Game Settings
 Make sure the game detects the gamepad<br/>
 Make sure the _Controller subtype_ is set to **Gamepad, joystick**<br/>
 Use **1280x720** resolution in game<br/>
@@ -22,7 +22,9 @@ With the gamepad plugged in, set the _Steering axis_ to **Joy X Axis**.<br/>
 Set the _Acceleration and Brake axis_ to **Joy RY Axis**, this will be converted to **Joy Y Rotation** when using **Keyboard + vJoy Device** as input. Set the _Acceleration axis mode_ to **Centered** and the _Brake axis mode_ to **Inverted and Centered**. (This is used for the autopilot to accelerate and brake, you do not have to use the Y axis for data collection).<br/>
 Bind _Light Modes_ to **L**<br/>
 Bind _Roof Camera_ to the controller **B** button and the **P** key<br/>
+___
 
+### Data Collection
 #### Recording Data
 For collecting data make sure the input is set to **Keyboard + XInput Gamepad 1** and the _Controller subtype_ is set to **Gamepad, joystick**<br/>
 To collect data run ```python3 collect_data.py <session>``` Make sure to specify different sessions for every execution.<br/> 
@@ -43,6 +45,7 @@ Run ```python3 train_conv_net.py``` to train the model.
 To train the digit recognition for monitoring speed run ```python3 train_digit_rec.py```
 ### Train Brake Prediction model
 To train the conv net for brake prediction run ```python3 train_brake_net.py```
+___
 
 ### Testing
 Open your game and in gameplay settings set your input as **Keyboard + vJoy Device**.<br/>
@@ -51,11 +54,13 @@ In ```test_autopilot.py``` specify the CONV_NET_MODEL directory for your saved m
 Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** on your controller or **P** on your keyboard to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera. While the system is running you still have control over steering with the keyboard **A** and **D** keys.<br/>   
 **LB** and **RB** activate respective lane changes.<br/>
 You can disengage the system with the keyboard **W** and **S** keys aswell, this allows for disengagement on human throttle or brake.
+___
 
 ## Notes
 * For data collection and cleaning, removing data of changing lanes and odd outliers drastically improves model performance. This system is essentialy meant to be an advanced lane assist with additional features. So removing data that is not staying in lane is ideal.
 * For data collection and testing, using the same truck also improves performance. In my testing I bought the cheapest Peterbilt truck and used it for my data collection and testing. This is because different trucks have different roof heights which affects the height of the roof camera. Alternatively you could collect data from a large enough sample of trucks so that your model can generalize across varying roof camera heights. I attempted this and it did work however results are still better if you use the same truck for all of your training and testing.
 * Load on the truck seems to affect the performance of the system if not trained on a robust enough dataset. Essentially since the system doesnt know if the truck is under load or not its predictions do not change accordingly however load may affect how quickly a miscalculation can be corrected for. This effect is miniscule based on testing.
+___
 
 ## References
 * Python vJoy library https://github.com/tidzo/pyvjoy<br/>
