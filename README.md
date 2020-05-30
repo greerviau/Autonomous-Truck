@@ -2,24 +2,29 @@
 An autonomous driving system built to drive in a truck driving simulator
 
 ## Installation
-Git clone the repository and ```cd``` into the directory
+Git clone the repository and ```cd``` into the directory, install requirements and clone pyvjoy
 ``` 
 git clone https://github.com/greerviau/Autonomous-Truck.git && cd Autonomous-Truck
+pip install -r requirements.txt
+git clone https://github.com/tidzo/pyvjoy
 ```
-```git clone https://github.com/tidzo/pyvjoy``` into Autonomous-Truck  
 Download and install vJoy from http://vjoystick.sourceforge.net/site/index.php/download-a-install/download  
 Navigate to ```vJoy/x86``` in wherever you installed vJoy. Copy vJoyInterface.dll and paste it into the pyvjoy directory.  
 
 ## Usage 
 ### Data Collection
 #### Game Settings
-Make sure the game detects your gamepad<br/>
-Make sure the controller-subtype is set to **Gamepad, joystick**<br/>
-Make sure that the controller **B** button is bound to roof camera in game<br/>
+Make sure the game detects the gamepad<br/>
+Make sure the _Controller subtype_ is set to **Gamepad, joystick**<br/>
 Use **1280x720** resolution in game<br/>
 Try to use the highest graphics settings possible while still being able to run the program effectively (this will take some fine-tuning)<br/>
+With the gamepad plugged in, set the _Steering axis_ to **Joy X Axis**.<br/>
+Set the _Acceleration and Brake axis_ to **Joy RY Axis**, this will be converted to **Joy Y Rotation** when using **Keyboard + vJoy Device** as input. Set the _Acceleration axis mode_ to **Centered** and the _Brake axis mode_ to **Inverted and Centered**. (This is used for the autopilot to accelerate and brake, you do not have to use the Y axis for data collection).<br/>
+Bind _Light Modes_ to **L**<br/>
+Bind _Roof Camera_ to the controller **B** button and the **P** key<br/>
 
 #### Recording Data
+For collecting data make sure the input is set to **Keyboard + XInput Gamepad 1** and the _Controller subtype_ is set to **Gamepad, joystick**<br/>
 To collect data run ```python3 collect_data.py <session>``` Make sure to specify different sessions for every execution.<br/> 
 While recording, use the **B** button to start a new recording, this will not create a new session but instead split into a new clip.<br/>  
 Use this feature to start recording new clips of desired data. This will make data cleaning easier. Ex. Before changing lanes, press **B** before changing and press **B** after lane change is finished. This will create 3 clips, 1 before lane change, 1 of the lane change and the final will continue recording the rest of the drive. Then durring data cleaning simply delete the clip of the lane change.<br/>  
@@ -41,14 +46,15 @@ To train the conv net for brake prediction run ```python3 train_brake_net.py```
 
 ### Testing
 Open your game and in gameplay settings set your input as **Keyboard + vJoy Device**.<br/>
-If vJoy is not detected then run ```python3 detect_vjoy_ingame.py``` while your game is open and it should ask you to use vJoy as a controller. Like the Xbox controller, make sure the controller-subtype is set to **Gamepad, joystick**<br/>   
+If vJoy is not detected then run ```python3 detect_vjoy_ingame.py``` while your game is open and it should ask you to use vJoy as a controller. Like the Xbox controller, make sure the _Controller subtype_ is set to **Gamepad, joystick**<br/>   
 In ```test_autopilot.py``` specify the CONV_NET_MODEL directory for your saved model. Also specify if you want to record data from the test. Run ```python3 test_autopilot.py``` if you want to record data from the test, specify the session as an argument in the command line execution. Data will be saved to ```data/roof_cam/raw_autonomous```<br/>   
-Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera.<br/>   
+Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** on your controller or **P** on your keyboard to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera.While the system is running you still have control over steering with the keyboard but not brake and throttle.<br/>   
 **LB** and **RB** activate respective lane changes.<br/>
 
 ## Notes
 For data collection and cleaning, removing data of changing lanes and odd outliers drastically improves model performance. This system is essentialy meant to be an advanced lane assist with additional features. So removing data that is not staying in lane is ideal.<br/>
 For data collection and testing, using the same truck also improves performance. In my testing I bought the cheapest Peterbilt truck and used it for my data collection and testing. This is because different trucks have different roof heights which affects the height of the roof camera.<br/>
+Alternatively you could collect data from a large enough sample of trucks so that your model can generalize across varying roof camera heights. I attempted this and it did work however results are still better if you use the same truck for all of your training and testing.<br/>
 
 ## References
 * Python vJoy library https://github.com/tidzo/pyvjoy<br/>
