@@ -1,0 +1,10 @@
+numpy
+pandas
+scikit-learn
+scipy
+sklearn
+tensorflow-gpu==1.15
+pillow
+inputs
+opencv-python
+ctypes
