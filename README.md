@@ -2,7 +2,7 @@
 An autonomous driving system built to drive in a truck driving simulator
 
 ## Installation
-Git clone the repository and ```cd``` into the directory, install requirements and clone pyvjoy
+Git clone the repository and ```cd``` into the directory, install requirements and clone pyvjoy into Autonomous-Truck
 ``` 
 git clone https://github.com/greerviau/Autonomous-Truck.git && cd Autonomous-Truck
 pip install -r requirements.txt
@@ -48,13 +48,14 @@ To train the conv net for brake prediction run ```python3 train_brake_net.py```
 Open your game and in gameplay settings set your input as **Keyboard + vJoy Device**.<br/>
 If vJoy is not detected then run ```python3 detect_vjoy_ingame.py``` while your game is open and it should ask you to use vJoy as a controller. Like the Xbox controller, make sure the _Controller subtype_ is set to **Gamepad, joystick**<br/>   
 In ```test_autopilot.py``` specify the CONV_NET_MODEL directory for your saved model. Also specify if you want to record data from the test. Run ```python3 test_autopilot.py``` if you want to record data from the test, specify the session as an argument in the command line execution. Data will be saved to ```data/roof_cam/raw_autonomous```<br/>   
-Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** on your controller or **P** on your keyboard to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera.While the system is running you still have control over steering with the keyboard but not brake and throttle.<br/>   
+Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** on your controller or **P** on your keyboard to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera. While the system is running you still have control over steering with the keyboard **A** and **D** keys.<br/>   
 **LB** and **RB** activate respective lane changes.<br/>
+You can disengage the system with the keyboard **W** and **S** keys aswell, this allows for disengagement on human throttle or brake.
 
 ## Notes
-For data collection and cleaning, removing data of changing lanes and odd outliers drastically improves model performance. This system is essentialy meant to be an advanced lane assist with additional features. So removing data that is not staying in lane is ideal.<br/>
-For data collection and testing, using the same truck also improves performance. In my testing I bought the cheapest Peterbilt truck and used it for my data collection and testing. This is because different trucks have different roof heights which affects the height of the roof camera.<br/>
-Alternatively you could collect data from a large enough sample of trucks so that your model can generalize across varying roof camera heights. I attempted this and it did work however results are still better if you use the same truck for all of your training and testing.<br/>
+* For data collection and cleaning, removing data of changing lanes and odd outliers drastically improves model performance. This system is essentialy meant to be an advanced lane assist with additional features. So removing data that is not staying in lane is ideal.
+* For data collection and testing, using the same truck also improves performance. In my testing I bought the cheapest Peterbilt truck and used it for my data collection and testing. This is because different trucks have different roof heights which affects the height of the roof camera. Alternatively you could collect data from a large enough sample of trucks so that your model can generalize across varying roof camera heights. I attempted this and it did work however results are still better if you use the same truck for all of your training and testing.
+* Load on the truck seems to affect the performance of the system if not trained on a robust enough dataset. Essentially since the system doesnt know if the truck is under load or not its predictions do not change accordingly however load may affect how quickly a miscalculation can be corrected for. This effect is miniscule based on testing.
 
 ## References
 * Python vJoy library https://github.com/tidzo/pyvjoy<br/>
