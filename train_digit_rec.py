@@ -15,7 +15,8 @@ Y = []
 for label in os.listdir('digit_data'):
     images = os.listdir('digit_data/'+label)
     random.shuffle(images)
-    for image in images[:100]:
+    print(len(images))
+    for image in images[:500]:
         X.append(cv2.imread('digit_data/'+label+'/'+image, 0))
         Y.append(int(label))
 

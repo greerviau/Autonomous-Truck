@@ -1,9 +1,12 @@
 #import tensorflow as tf
 import os
 import cv2
-import numpy as np
 import random
+
+import numpy as np
 import pandas as pd
+
+from utils import Queue
 
 processed_data_dir = 'data/roof_cam/processed_braking/Peterbilt'
 
@@ -13,7 +16,7 @@ if not os.path.exists(processed_data_dir):
 data_dir = 'data/roof_cam/raw/Peterbilt'
 
 session_folders = os.listdir(data_dir)
-'''
+
 for session in session_folders:
     print()
     print(session)
@@ -34,14 +37,17 @@ for session in session_folders:
         print(split)
         road_video = cv2.VideoCapture(os.path.join(split_dir, split, 'drive.mp4'))
 
-        wheel_data = pd.read_csv(os.path.join(split_dir, split, 'controls.csv'))['LT'].to_numpy()
+        brake_data = pd.read_csv(os.path.join(split_dir, split, 'controls.csv'))['LT'].to_numpy()
 
-        if sum(wheel_data) > 0:
-            wheel_data[wheel_data > 0] = 1
+        if sum(brake_data) > 0:
 
-            control_data.append(wheel_data)
+            brake_data[brake_data > 0] = 1
 
-            print('Size: ',len(wheel_data))
+            control_data.append(brake_data)
+
+            print('Size: ',len(brake_data))
+
+            queue = None
 
             while True:
                 ret, frame = road_video.read()
@@ -49,14 +55,24 @@ for session in session_folders:
                 if not ret:
                     break
 
-                road = frame[380:630, 330:950, :]  #W, H = 620, 250
+                road = frame[200:630, 330:950, :]  #W, H = 620, 250
+
+                road = cv2.cvtColor(road, cv2.COLOR_BGR2GRAY)
                 road = cv2.resize(road, (124, 50))
+
+                if queue is None:
+                    queue = Queue(road, 20)
+                else:
+                    queue.add(road)
+                    
+                temporal = np.dstack((road, queue.get(10), queue.get(20)))
+                #cv2.imshow('temporal',cv2.resize(temporal, (248,100)))
             
                 #normal_frame = frame / 127.5 - 1.0
                 
-                total_frames.append(np.copy(road).astype(np.float16))
+                total_frames.append(np.copy(temporal).astype(np.float32))
 
-                cv2.imshow('Frame', road)
+                #cv2.imshow('Frame', road)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
@@ -72,7 +88,7 @@ for session in session_folders:
     control_data = pd.DataFrame(control_data, columns=['Brake'])
     np.save(os.path.join(session_data_dir, 'X'), total_frames)
     control_data.to_csv(os.path.join(session_data_dir, 'Y.csv'))
-'''
+
 
 aggregate_frames = []
 aggregate_data = []
@@ -139,6 +155,7 @@ from sklearn.model_selection import train_test_split
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
+import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout, Flatten, Lambda

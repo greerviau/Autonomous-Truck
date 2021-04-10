@@ -4,26 +4,43 @@ import csv
 import os
 import sys
 import pyvjoy
+import pydirectinput
 
 import numpy as np
 import tensorflow as tf
 
 from PIL import ImageGrab
 from xbox_controller import XboxController
-from utils import grab_frame
 from conv_net_model import *
 from tensorflow.keras.models import load_model
-from utils import get_speed, get_speed_limit, get_curve
-from direct_keys import PressKey, ReleaseKey, W, A, S, D, L
+from utils import *
 from get_keys import key_check
 
 
-CONV_NET_MODEL = 'conv_net_models/conv_net_v24_Peterbilt/conv_net.ckpt'
+CONV_NET_MODEL = 'conv_net_models/conv_net_v29_medium_Peterbilt/conv_net.ckpt'
 
 MAX_VJOY = 32767
 RESOLUTION = (1280, 720)
 MAX_SPEED = 50
+TIME_TO_TELEPORT = 15
 COLLECTING_DATA = False
+
+xbox = XboxController()
+joy = pyvjoy.VJoyDevice(1)
+
+network = conv_net(x, keep_prob)
+saver = tf.train.Saver()
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+
+sess = tf.Session(config=config)
+saver.restore(sess, CONV_NET_MODEL)
+
+ocr = OCR()
+teleporter = Teleporter()
+
+brake_net = load_model('brake_net_model/brake_net.h5')
 
 def set_joy_from_gamepad(joy, pad_dict):
 
@@ -38,6 +55,27 @@ def set_joy_from_gamepad(joy, pad_dict):
     joy.set_button(9, pad_dict['LStick']* MAX_VJOY)
     joy.set_button(10, pad_dict['RStick']* MAX_VJOY)
 
+def get_frame():
+    frame = grab_frame(region = (0,0,1280,720)) 
+    frame = cv2.resize(frame, RESOLUTION)
+    return cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+def crop_road(frame):
+    #GET THE ROAD SECTION THAT WILL BE INPUT TO THE CONV NET
+    road = frame[380:630, 330:950, :]  #W, H = 620, 250
+    #road = cv2.resize(road, (124, 50))
+    #road = cv2.resize(road, (200, 80))
+    road = cv2.resize(road, (160, 64))
+    return road
+
+def get_steering_prediction(frame):
+    input_frame = np.copy(frame).astype(np.float16)
+
+    #PREDICT THE TURN RADIUS
+    pred_left_x = sess.run(network, feed_dict={x:[input_frame], keep_prob:1.0})[0][0]
+    #TRANSLATE THE TURN RADIUS TO A JOYSTICK X COMMAND
+    ai_joy_x = int(((1.0+pred_left_x)/2) * MAX_VJOY)
+    return pred_left_x, ai_joy_x
 
 def main():
 
@@ -48,38 +86,28 @@ def main():
     
     vid_number = int(videos[len(videos)-1].split('_')[1].split('.')[0])
 
-    video_out = cv2.VideoWriter("test_videos/test_{}.mp4".format(vid_number+1),cv2.VideoWriter_fourcc(*'XVID'), 30, RESOLUTION)
-
-    xbox = XboxController()
-    joy = pyvjoy.VJoyDevice(1)
-
-    network = conv_net(x, keep_prob)
-    saver = tf.train.Saver()
-
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-
-    sess = tf.Session(config=config)
-    saver.restore(sess, CONV_NET_MODEL)
-
-    ocr_model = load_model('digit_rec_model/digit_rec.h5')
-
-    #brake_net = load_model('brake_net_model/brake_net.h5')
+    #video_out = cv2.VideoWriter("test_videos/test_{}.mp4".format(vid_number+1),cv2.VideoWriter_fourcc(*'XVID'), 30, RESOLUTION)
 
     human_override = True
     lock = False
     lights_on = False
     changing_lanes = True
+    timing = False
 
     light_avg = []
 
     inference_time = 1
     frame_count = 0
-    speed_limit = 0
+    speed = 0
+    last_speed = 0
     lane_change = 0
     counter = 0
 
+    timer = 0
+
     key_check()
+    
+    temp_queue = None
     
     if COLLECTING_DATA:
         clip = 1
@@ -125,6 +153,8 @@ def main():
             right_bump = input_dict['RB']
 
             p_key = 'P' in key_check()
+            w_key = 'W' in key_check()
+            s_key = 'S' in key_check()
 
             #CHANGE LANES
             if left_bump and not changing_lanes:
@@ -143,8 +173,8 @@ def main():
                     lane_change = 0
 
             #ENGAGE OR DISENGAGE THE AUTOPILOT
-            if (b_button or p_key) and not lock:
-                if human_override:
+            if not lock:
+                if human_override and (b_button or p_key):
                     human_override=False
 
                     #MAKE A NEW DATA COLLECTION CLIP
@@ -161,9 +191,7 @@ def main():
 
                         clip += 1
 
-                elif not human_override:
-                    ReleaseKey(W)
-                    ReleaseKey(S)
+                elif not human_override and (b_button or p_key or w_key or s_key):
                     human_override=True
 
                     if COLLECTING_DATA:
@@ -171,14 +199,55 @@ def main():
                 
                 lock = True
 
-            if (not b_button and not p_key) and lock:
+            if (not b_button and not p_key and not w_key and not s_key) and lock:
                 lock = False
 
             #GET THE GAME FRAME
-            frame = grab_frame(region = (0,0,1280,720)) 
-            frame = cv2.resize(frame, RESOLUTION)
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            frame = get_frame()
 
+            #UPDATE CURRENT SPEED EVERY 2 FRAMES
+            current_speed = ocr.get_speed(frame)
+            if current_speed is not None:
+                speed = current_speed
+                if not human_override:
+                    if speed < 5 and not timing:
+                        start_timer = time.time()
+                        timing = True
+                    elif speed < 5 and timing:
+                        if time.time() - start_timer > TIME_TO_TELEPORT:
+                            joy.data.wAxisYRot = MAX_VJOY//2
+                            joy.update()
+                            teleporter.teleport_to_next_location()
+                            timing = False
+                            #CENTER THE WHEELS
+                            for i in range(5):
+                                joy.data.wAxisX = 0
+                                joy.update()
+                                time.sleep(1)
+                            for i in range(5):
+                                joy.data.wAxisX = MAX_VJOY
+                                joy.update()
+                                time.sleep(1)
+                            for i in range(5):
+                                joy.data.wAxisX = 9500
+                                joy.update()
+                                time.sleep(1)
+                    else:
+                        timing = False
+                else:
+                    timing = False
+
+            #UPDATE THE SPEED LIMIT EVERY N FRAMES
+            if frame_count % 25 == 0:
+                speed_limit = ocr.get_speed_limit(frame)
+                frame_count = 0
+
+            #SPEEDING
+            speeding = speed - min(speed_limit, MAX_SPEED) > 2
+
+            frame_count+=1
+
+            #FRAME FOR COLLECTING DATA
             write_frame = np.copy(frame)
             
             #MEASURE THE LIGHT LEVEL FOR THE HEADLIGHTS
@@ -188,95 +257,102 @@ def main():
 
             light = np.mean(light_avg)
 
-            #GET THE ROAD SECTION THAT WILL BE INPUT TO THE CONV NET
-            road = frame[380:630, 330:950, :]  #W, H = 620, 250
-            combined = cv2.resize(road, (124, 50))
+            road = crop_road(frame)
             '''
             gps = frame[511:611, 1030:1210, :]
             gps = cv2.resize(gps, (124, 50))
 
-            combined = np.concatenate((road, gps), axis=0)
+            road = np.concatenate((road, gps), axis=0)
             '''
-            input_frame = np.copy(combined).astype(np.float16)
-
-            #PREDICT THE TURN RADIUS
-            pred_left_x = sess.run(network, feed_dict={x:[input_frame], keep_prob:1.0})[0][0]
-            #TRANSLATE THE TURN RADIUS TO A JOYSTICK X COMMAND
-            ai_joy_x = int(((1.0+pred_left_x)/2) * MAX_VJOY)
+            pred_left_x, ai_joy_x = get_steering_prediction(road)
 
             joy.data.wAxisY = MAX_VJOY // 2
             #joy.data.wAxisY = MAX_VJOY - int(((1.0+left_y)/2) * MAX_VJOY)
 
             #BRAKE PREDICTION
+            
+            brake_frame = cv2.cvtColor(road, cv2.COLOR_BGR2GRAY)
+            brake_frame = cv2.resize(brake_frame, (124, 50))
+            if temp_queue is None:
+                temp_queue = Queue(brake_frame, 20)
+            else:
+                temp_queue.add(brake_frame)
             '''
-            brake_pred = brake_net.predict(np.array([input_frame]))[0][0]
-            brake = brake_pred > 0.85
+            temporal = np.float32(cv2.merge((brake_frame, temp_queue.get(10), temp_queue.get(20))))
+            brake_pred = brake_net.predict(np.array([temporal]))[0][0]
+            brake = brake_pred > 0.7
+            ai_brake = int(.75 * MAX_VJOY)
             '''
             brake_pred = 0
             brake = False
-            
-            #UPDATE CURRENT SPEED EVERY 2 FRAMES
-            if frame_count % 2 == 0:
-                speed = get_speed(frame, ocr_model)
 
-            #UPDATE THE SPEED LIMIT EVERY 50 FRAMES
-            if frame_count % 50 == 0:
-                speed_limit = get_speed_limit(frame, ocr_model)
-                frame_count = 0
+            def draw_ui_to_frame(frame, road, overlay=True):
 
-            frame_count+=1
+                auto_pilot_status = 'Disengaged'
+                acc_status = 'Inactive'
+                color = (0,0,255)
+                if not human_override:
+                    auto_pilot_status = 'Engaged'
+                    acc_status = 'Active'
+                    color=(0,255,0)
 
-            auto_pilot_status = 'Disengaged'
-            acc_status = 'Inactive'
-            color = (0,0,255)
-            if not human_override:
-                auto_pilot_status = 'Engaged'
-                acc_status = 'Active'
-                color=(0,255,0)
+                headlights = 'Off'
+                headlight_color = (0,0,255)
+                if lights_on:
+                    headlights = 'On'
+                    headlight_color = (0,255,0)
 
-            headlights = 'Off'
-            headlight_color = (0,0,255)
-            if lights_on:
-                headlights = 'On'
-                headlight_color = (0,255,0)
+                lane = 'None'
+                if lane_change == -1:
+                    lane = 'Left'
+                elif lane_change == 1:
+                    lane = 'Right'
 
-            lane = 'None'
-            if lane_change == -1:
-                lane = 'Left'
-            elif lane_change == 1:
-                lane = 'Right'
+                if overlay:
+                    overlay = np.copy(frame)
+                    cv2.rectangle(overlay, (0,350), (330,710), (0,0,0), -1)
+                    frame = cv2.addWeighted(overlay, 0.6, frame, 1-0.6, 1)
 
-            def draw_text_to_frame(frame):
+                frame = cv2.resize(frame, (1920,1080))
 
                 font = cv2.FONT_HERSHEY_SIMPLEX
 
-                cv2.putText(frame, 'Autopilot: ', (20,350), font, 0.8, (255,255,255), 2)
-                cv2.putText(frame, auto_pilot_status, (150,350), font, 0.8, color, 2)
+                cv2.putText(frame, 'Autopilot: ', (30,570), font, 1.2, (255,255,255), 2)
+                cv2.putText(frame, auto_pilot_status, (225,570), font, 1.2, color, 2)
 
-                cv2.putText(frame, 'Predicted Turn: {:.3f}'.format(pred_left_x), (20,380), font, 0.8, (255,255,255), 2)
+                cv2.putText(frame, 'Predicted Turn: {:.3f}'.format(pred_left_x), (30,615), font, 1.2, (255,255,255), 2)
 
-                cv2.putText(frame, 'Joy X: '+str(joy.data.wAxisX), (20,410), font, 0.8, (255,255,255), 2)
+                cv2.putText(frame, 'Lane Change: '+lane, (30,690), font, 1.2, (255,255,255), 2)
 
-                cv2.putText(frame, 'Lane Change: '+lane, (20,440), font, 0.8, (255,255,255), 2)
+                cv2.putText(frame, 'Adaptive CC: ', (30,735), font, 1.2, (255,255,255), 2)
+                cv2.putText(frame, acc_status, (285,735), font, 1.2, color, 2)
 
-                cv2.putText(frame, 'Auto CC: ', (20,490), font, 0.8, (255,255,255), 2)
-                cv2.putText(frame, acc_status, (140,490), font, 0.8, color, 2)
+                cv2.putText(frame, 'Max Speed: {}'.format(MAX_SPEED), (30,780), font, 1.2, (255,255,255), 2)
 
-                cv2.putText(frame, 'Max Speed: {}'.format(MAX_SPEED), (20,520), font, 0.8, (255,255,255), 2)
+                cv2.putText(frame, 'Speed Limit: {}'.format(speed_limit), (30,825), font, 1.2, (255,255,255), 2)
 
-                cv2.putText(frame, 'Speed Limit: {}'.format(speed_limit), (20,550), font, 0.8, (255,255,255), 2)
+                cv2.putText(frame, 'Speed: {}'.format(speed), (30,870), font, 1.2, (255,255,255), 2)
 
-                cv2.putText(frame, 'Speed: {}'.format(speed), (20,580), font, 0.8, (255,255,255), 2)
-
-                if not brake:
-                    cv2.putText(frame, 'GAS ', (20,630), font, 0.8, (0,255,0), 2)
+                cv2.putText(frame, 'Pedal: ', (30,915), font, 1.2, (255,255,255), 2)
+                if not brake and not speeding:
+                    cv2.putText(frame, 'GAS', (165,915), font, 1.2, (0,255,0), 2)
                 else:
-                    cv2.putText(frame, 'BRAKE ', (20,630), font, 0.8, (0,0,255), 2)
+                    cv2.putText(frame, 'BRAKE', (165,915), font, 1.2, (0,0,255), 2)
 
-                cv2.putText(frame, 'Headlights: ', (20,660), font, 0.8, (255,255,255), 2)
-                cv2.putText(frame, headlights, (170,660), font, 0.8, headlight_color, 2)
+                cv2.putText(frame, 'Headlights: ', (30,990), font, 1.2, (255,255,255), 2)
+                cv2.putText(frame, headlights, (255,990), font, 1.2, headlight_color, 2)
 
-                cv2.putText(frame, 'Inf Time: {:.2f} fps'.format(1.0/inference_time), (20,690), font, 0.8, (255,255,255), 2)
+                cv2.putText(frame, 'Inf Time: {:.2f} fps'.format(1.0/inference_time), (30,1040), font, 1.2, (255,255,255), 2)
+
+                if timing:
+                    if TIME_TO_TELEPORT - (time.time()-start_timer) > 1:
+                        text = 'Teleporting in: {:.0f} seconds'.format(TIME_TO_TELEPORT - (time.time()-start_timer))
+                        (label_width, label_height), baseline = cv2.getTextSize(text, font, 1, 3)
+                        cv2.putText(frame, text, (960-label_width//2,540), font, 1.5, (0,0,255), 3)
+                    else:
+                        text = 'Teleporting'
+                        (label_width, label_height), baseline = cv2.getTextSize(text, font, 1, 3)
+                        cv2.putText(frame, text, (960-label_width//2,540), font, 1.5, (0,255,0), 3)
 
                 return frame
 
@@ -296,70 +372,47 @@ def main():
                     csvwriter.writerow([pred_left_x, brake_pred])
 
                 #TURN THE HEADLIGHTS ON AND OFF DEPENDING ON LIGHT LEVEL
-                if light < 80 and not lights_on:
-                    PressKey(L)
-                    ReleaseKey(L)
-                    time.sleep(0.01)
-                    PressKey(L)
-                    ReleaseKey(L)
+                if light < 90 and not lights_on:
+                    pydirectinput.press(['l', 'l'])
                     lights_on = True
-                elif light > 80 and lights_on:
-                    PressKey(L)
-                    ReleaseKey(L)
+                elif light > 90 and lights_on:
+                    pydirectinput.press('l')
                     lights_on = False
 
-                if brake or speed - min(speed_limit, MAX_SPEED) > 5:
-                    ReleaseKey(W)
-                    PressKey(S)
-                    brake = True
+                if brake:
+                    joy.data.wAxisYRot = ai_brake
+                elif speeding:
+                    joy.data.wAxisYRot = int(MAX_VJOY * 0.85)
+                elif (pred_left_x > 0.25 or pred_left_x < -0.3) and speed > min(speed_limit, MAX_SPEED)-5:
+                    joy.data.wAxisYRot = int(MAX_VJOY * 0.75)
+                elif (pred_left_x > 0.25 or pred_left_x < -0.3):
+                    joy.data.wAxisYRot = int(MAX_VJOY * 0.5)
                 elif speed < min(speed_limit, MAX_SPEED):
-                    ReleaseKey(S)
-                    PressKey(W)
+                    joy.data.wAxisYRot = 0
                 else:
-                    ReleaseKey(S)
-                    ReleaseKey(W)
+                    joy.data.wAxisYRot = int(MAX_VJOY * 0.5)
                 
 
             else:
                 joy.data.wAxisX = human_joy_x
+                joy.data.wAxisYRot = MAX_VJOY//2
 
             # UPDATE THE VIRTUAL JOYSTICK
             joy.update()
 
             #SETUP THE VISUAL FRAME
-            shp = combined.shape
-            combined = cv2.resize(combined, (shp[1]*2, shp[0]*2))
-            shp = combined.shape
             
-            overlay = np.copy(frame)
-            cv2.rectangle(overlay, (0,320), (330,710), (0,0,0), -1)
-            frame = cv2.addWeighted(overlay, 0.6, frame, 1-0.6, 1)
-            frame = draw_text_to_frame(frame)
-
-            frame[0:shp[0], 640-shp[1]//2:640+shp[1]//2, :] = combined
-            cv2.imshow('Auto Truck',frame)
-            video_out.write(frame)
+            frame = draw_ui_to_frame(frame, road)
+            cv2.imshow('Auto Truck',cv2.resize(frame, (1280, 720)))
+            #video_out.write(frame)
+            '''
             
-            ''' 
             black_screen = np.zeros_like(frame)
-            black_screen[0:shp[0], 640-shp[1]//2:640+shp[1]//2, :] = road
 
-            black_screen = draw_text_to_frame(black_screen)
+            black_screen = draw_ui_to_frame(black_screen, road, overlay=False)
             cv2.imshow('Auto Truck Black',black_screen)
-            video_out.write(black_screen)
+            #video_out.write(black_screen)
             '''
-
-            '''
-            curve = get_curve(pred_left_x*-1, frame.shape[1]//2, frame.shape[0])
-
-            color = (0,0,255)
-            if not human_override:
-                color = (0,255,0)
-            cv2.polylines(frame,[curve],False,color,10)
-            '''
-
-            #print('\rTruth: {:.5f} - Predicted: {:.5f} - True Joy X: {} - Pred Joy X: {} - Light Level: {:.2f} - Lights On: {} - AI Control: {}   '.format(left_x, pred_left_x, human_joy_x, ai_joy_x, light, str(lights_on), str(not human_override)), end='')
-
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 raise KeyboardInterrupt
@@ -370,7 +423,7 @@ def main():
 
     except KeyboardInterrupt:
         cv2.destroyAllWindows()
-        video_out.release()
+        #video_out.release()
         print('\nExiting')
 
 main()

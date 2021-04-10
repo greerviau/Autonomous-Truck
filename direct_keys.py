@@ -1,14 +1,10 @@
 import ctypes
 import time
+import json
 
 SendInput = ctypes.windll.user32.SendInput
 
-
-W = 0x11
-A = 0x1E
-S = 0x1F
-D = 0x20
-L = 0x26
+from key_codes import KEY_CODES
 
 # C struct redefinitions 
 PUL = ctypes.POINTER(ctypes.c_ulong)
@@ -42,6 +38,22 @@ class Input(ctypes.Structure):
                 ("ii", Input_I)]
 
 # Actuals Functions
+
+def set_pos(x, y):
+    x = 1 + int(x * 65536./1920.)
+    y = 1 + int(y * 65536./1080.)
+    extra = ctypes.c_ulong(0)
+    ii_ = Input_I()
+    ii_.mi = MouseInput(x, y, 0, (0x0001 | 0x8000), 0, ctypes.pointer(extra))
+    command = Input(ctypes.c_ulong(0), ii_)
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(command), ctypes.sizeof(command))
+
+def left_click():
+    extra = ctypes.c_ulong(0)
+    ii_ = Input_I()
+    ii_.mi = MouseInput(0, 0, 0, 0x0002, 0, ctypes.pointer(extra))
+    x = Input(ctypes.c_ulong(0), ii_)
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
 def PressKey(hexKeyCode):
     extra = ctypes.c_ulong(0)

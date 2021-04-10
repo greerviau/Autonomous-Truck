@@ -3,8 +3,10 @@ pandas
 scikit-learn
 scipy
 sklearn
+tensorflow==1.15
 tensorflow-gpu==1.15
 pillow
 inputs
 opencv-python
-ctypes
+pywin32
+matplotlib
