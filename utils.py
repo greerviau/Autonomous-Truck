@@ -6,41 +6,6 @@ def grab_frame(region = (0,30,1280,740)):
     frame =  np.array(ImageGrab.grab(bbox=region))
     return frame
 
-'''
-def get_speed(frame, current_speed, region, thresh, invert=False, print_txt=False):
-    
-    x1, y1, x2, y2 = region
-
-    speed_frame = frame[y1:y2,x1:x2]
-
-    speed_frame = cv2.cvtColor(speed_frame, cv2.COLOR_BGR2GRAY)
-
-    speed_frame = cv2.resize(speed_frame, (speed_frame.shape[1]*5, speed_frame.shape[0]*5))
-
-    speed_frame_thresh = np.zeros_like(speed_frame)
-
-    if invert:
-        speed_frame_thresh[speed_frame < thresh] = 255
-    else:
-        speed_frame_thresh[speed_frame > thresh] = 255
-
-    speed_text = tess.image_to_string(speed_frame_thresh)
-
-    #cv2.imshow('thresh', speed_frame_thresh)
-
-    if print_txt:
-        print(speed_text)
-
-    try:
-        spd = int(speed_text)
-        if current_speed == 0 or abs(spd-current_speed) < 5:
-            return spd, speed_frame_thresh
-        else:
-            return current_speed, speed_frame_thresh
-    except:
-        return current_speed, speed_frame_thresh
-'''
-
 def get_speed(frame, ocr_model):
     #SPD DIGIT 1
     speed_frame = frame[477:493,1002:1012]
