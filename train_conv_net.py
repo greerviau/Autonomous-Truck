@@ -1,9 +1,9 @@
-import pandas as pd
-import numpy as np
 import cv2
 import os
-import random as rnd
 
+import random as rnd
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
 from conv_net_model import *
@@ -38,7 +38,7 @@ def train(X_train, Y_train, X_val, Y_val, save_path=None, epochs=20, batch_size=
                             samples_shifted += 1
 
                             hsv = cv2.cvtColor(batch_x[i].astype(np.uint8), cv2.COLOR_BGR2HSV).astype(np.int16)
-                            value = int(((rnd.random()*2 - 1)*255)*0.2)
+                            value = int(((rnd.random()*2 - 1)*255)*0.25)
 
                             avg_shift.append(value)
 
@@ -74,7 +74,7 @@ def train(X_train, Y_train, X_val, Y_val, save_path=None, epochs=20, batch_size=
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
             save.save(sess, save_path+'/conv_net.ckpt')
-    
+            
 
 def test(X_test, Y_test, network, saver, save_path=None):
     #Testing
@@ -103,7 +103,7 @@ def test(X_test, Y_test, network, saver, save_path=None):
 
 def main():
 
-    SAVE_PATH = 'conv_net_models/conv_net_v25_Peterbilt'
+    SAVE_PATH = 'conv_net_models/conv_net_v29_medium_Peterbilt'
     MAX_EPOCHS = 1000
     BATCH_SIZE = 16
     AUGMENT = False
@@ -115,8 +115,8 @@ def main():
 
     print('Loading Data...')
     
-    X = np.load('data/roof_cam/processed_road/X.npy')
-    Y = pd.read_csv('data/roof_cam/processed_road/Y.csv')['Left X'].to_numpy()
+    X = np.load('data/roof_cam/processed_road_medium/X.npy')
+    Y = pd.read_csv('data/roof_cam/processed_road_medium/Y.csv')['Left X'].to_numpy()
     '''
     X = []
     Y = []
@@ -134,7 +134,7 @@ def main():
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
-    train(X_train, Y_train, X_test, Y_test, save_path=SAVE_PATH, epochs=MAX_EPOCHS, batch_size=BATCH_SIZE, opt=optimizer, lss=loss, save=saver, augment=AUGMENT, retrain=False)
+    train(X_train, Y_train, X_test, Y_test, save_path=SAVE_PATH, epochs=MAX_EPOCHS, batch_size=BATCH_SIZE, opt=optimizer, lss=loss, save=saver, augment=AUGMENT, retrain=True)
     
     test(X, Y, network, saver, save_path=SAVE_PATH)
 

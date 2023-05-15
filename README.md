@@ -1,5 +1,5 @@
 # Autonomous-Truck
-An autonomous driving system built to drive in a truck driving simulator. This system uses a Tensorflow implementation of [NVIDIA End-to-End Deep Learning for Self-Driving Cars](https://devblogs.nvidia.com/deep-learning-self-driving-cars/). To run this program you must have Tensorflow-GPU 1.15 (This program does not support Tensorflow 2.0), follow these guide to install on [Windows 10](https://towardsdatascience.com/installing-tensorflow-with-cuda-cudnn-and-gpu-support-on-windows-10-60693e46e781) or [Ubuntu](https://towardsdatascience.com/how-to-install-tensorflow-gpu-on-ubuntu-18-04-1c1d2d6d6fd2).
+An autonomous driving system built to drive in a truck driving simulator. This system uses a Tensorflow implementation of [NVIDIA End-to-End Deep Learning for Self-Driving Cars](https://devblogs.nvidia.com/deep-learning-self-driving-cars/). To run this program you must have Tensorflow-GPU 1.15 (This program does not support Tensorflow 2.0), follow these guides to install on [Windows 10](https://towardsdatascience.com/installing-tensorflow-with-cuda-cudnn-and-gpu-support-on-windows-10-60693e46e781) or [Ubuntu](https://towardsdatascience.com/how-to-install-tensorflow-gpu-on-ubuntu-18-04-1c1d2d6d6fd2).
 
 ## Installation
 Git clone the repository and ```cd``` into the directory, install requirements and clone pyvjoy into Autonomous-Truck
@@ -13,14 +13,14 @@ Navigate to ```vJoy/x86``` in wherever you installed vJoy. Copy vJoyInterface.dl
 ___
 ## Usage 
 ### Game Settings
-Make sure the game detects the gamepad<br/>
-Make sure the _Controller subtype_ is set to **Gamepad, joystick**<br/>
-Use **1280x720** resolution in game<br/>
-Try to use the highest graphics settings possible while still being able to run the program effectively (this will take some fine-tuning)<br/>
+Make sure the game detects the gamepad.<br/>
+Make sure the _Controller subtype_ is set to **Gamepad, joystick**.<br/>
+Use **1280x720** resolution in game.<br/>
+Try to use the highest graphics settings possible while still being able to run the program effectively (this will take some fine-tuning).<br/>
 With the gamepad plugged in, set the _Steering axis_ to **Joy X Axis**.<br/>
 Set the _Acceleration and Brake axis_ to **Joy RY Axis**, this will be converted to **Joy Y Rotation** when using **Keyboard + vJoy Device** as input. Set the _Acceleration axis mode_ to **Centered** and the _Brake axis mode_ to **Inverted and Centered**. (This is used for the autopilot to accelerate and brake, you do not have to use the Y axis for data collection).<br/>
-Bind _Light Modes_ to **L**<br/>
-Bind _Roof Camera_ to the controller **B** button and the **P** key<br/>
+Bind _Light Modes_ to **L**.<br/>
+Bind _Roof Camera_ to the controller **B** button and the **P** key.<br/>
 ___
 ### Data Collection
 #### Recording Data
@@ -50,9 +50,9 @@ To train the conv net for brake prediction run ```python3 train_brake_net.py```
 ___
 ### Testing
 Open your game and in gameplay settings set your input as **Keyboard + vJoy Device**.<br/>
-If vJoy is not detected then run ```python3 detect_vjoy_ingame.py``` while your game is open and it should ask you to use vJoy as a controller. Like the Xbox controller, make sure the _Controller subtype_ is set to **Gamepad, joystick**<br/>   
-In ```test_autopilot.py``` specify the CONV_NET_MODEL directory for your saved model. Also specify if you want to record data from the test. Run ```python3 test_autopilot.py``` if you want to record data from the test, specify the session as an argument in the command line execution. Data will be saved to ```data/roof_cam/raw_autonomous```<br/>   
-Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** on your controller or **P** on your keyboard to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera. While the system is running you still have control over steering with the keyboard **A** and **D** keys.<br/>   
+If vJoy is not detected then run ```python3 detect_vjoy_ingame.py``` while your game is open and it should ask you to use vJoy as a controller. Like the Xbox controller, make sure the _Controller subtype_ is set to **Gamepad, joystick**<br/><br/>
+In ```test_autopilot.py``` specify the CONV_NET_MODEL directory for your saved model. Also specify if you want to record data from the test. Run ```python3 test_autopilot.py```, if you want to record data from the test, specify the session as an argument in the command line execution ex. ```test_autopilot.py sess_01```. Data will be saved to ```data/roof_cam/raw_autonomous```<br/><br/>
+Once the program is running open the game (if you have 2 monitors it makes it easier to monitor the program while testing) Get your truck onto the highway and up to reasonable speed. Press **B** on your controller or **P** on your keyboard to engage the autopilot. If your button bindings are set up correctly this should also switch to the roof camera. While the system is running you still have control over steering with the keyboard **A** and **D** keys.<br/><br/>
 **LB** and **RB** activate respective lane changes.<br/>
 You can disengage the system with the keyboard **W** and **S** keys aswell, this allows for disengagement on human throttle or brake.
 ___

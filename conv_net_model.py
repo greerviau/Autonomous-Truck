@@ -2,7 +2,7 @@ import numpy as np
 
 import tensorflow as tf
 
-INPUT_SHAPE = (50, 124, 3)
+INPUT_SHAPE = (64, 160, 3)
 
 x = tf.placeholder('float', shape=[None , *INPUT_SHAPE])
 y = tf.placeholder('float', shape=[None, 1])

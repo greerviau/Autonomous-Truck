@@ -79,7 +79,7 @@ def ballance(frames, data):
     return frames, data
 
 
-processed_data_dir = 'data/roof_cam/processed_road'
+processed_data_dir = 'data/roof_cam/processed_road_medium'
 
 if not os.path.exists(processed_data_dir):
     os.makedirs(processed_data_dir)
@@ -123,7 +123,7 @@ for session in session_folders:
                 break
 
             road = frame[380:630, 330:950, :]  #W, H = 620, 250
-            road = cv2.resize(road, (124, 50))
+            road = cv2.resize(road, (160, 64))
 
             #gps = frame[511:611, 1030:1210, :]
             #gps = cv2.resize(gps, (124, 50))
